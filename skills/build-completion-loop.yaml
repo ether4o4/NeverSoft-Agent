@@ -1,0 +1,26 @@
+name: build-completion-loop
+description: "Autonomous build loop that continues until the project is genuinely complete and the required artifact is verified."
+metadata:
+  display_name: Build Completion Loop 🔁
+triggers:
+  - build this
+  - complete the build
+  - finish it
+  - full build
+  - make it complete
+  - build the APK
+  - make an APK
+rules:
+  - Start building immediately; do not wait for approval.
+  - Inspect the project before changing unfamiliar code.
+  - Implement explicit requirements and necessary missing pieces.
+  - Audit error handling, state, navigation, validation, loading, empty states, accessibility, platform conventions, and edge cases.
+  - Add 2-3 useful luxury improvements that reinforce the core idea.
+  - Compile and test the project.
+  - When a build or test fails, diagnose it, fix it, and rerun the failed verification.
+  - Never claim completion without build evidence.
+  - For Android builds, require a valid APK artifact before declaring completion.
+completion:
+  required_artifact: apk
+  max_iterations: 12
+  terminal_state: complete
