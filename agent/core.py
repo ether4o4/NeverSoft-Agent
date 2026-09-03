@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import inspect
 import json
-from typing import Any
+from typing import Any, get_type_hints
 
 from .llm import LLM
 from .tools import TOOLS
@@ -26,10 +27,35 @@ Rules:
 """
 
 
+def _json_type(annotation: Any) -> str:
+    origin = getattr(annotation, "__origin__", None)
+    if annotation is bool:
+        return "boolean"
+    if annotation in (int, float) or origin in (int, float):
+        return "number"
+    if annotation in (dict, list) or origin in (dict, list):
+        return "object" if annotation is dict or origin is dict else "array"
+    return "string"
+
+
 def tool_schemas() -> list[dict[str, Any]]:
-    """Convert the registered Python tools into OpenAI-compatible schemas."""
+    """Convert registered Python tools into OpenAI-compatible schemas."""
     schemas: list[dict[str, Any]] = []
     for name, fn in TOOLS.items():
+        signature = inspect.signature(fn)
+        hints = get_type_hints(fn)
+        properties: dict[str, Any] = {}
+        required: list[str] = []
+        for param_name, param in signature.parameters.items():
+            if param_name == "return":
+                continue
+            schema: dict[str, Any] = {"type": _json_type(hints.get(param_name, str))}
+            if param.default is not inspect.Parameter.empty:
+                schema["default"] = param.default
+            else:
+                required.append(param_name)
+            properties[param_name] = schema
+
         schemas.append({
             "type": "function",
             "function": {
@@ -37,8 +63,9 @@ def tool_schemas() -> list[dict[str, Any]]:
                 "description": (fn.__doc__ or f"Execute {name}").strip(),
                 "parameters": {
                     "type": "object",
-                    "properties": {},
-                    "additionalProperties": True,
+                    "properties": properties,
+                    "required": required,
+                    "additionalProperties": False,
                 },
             },
         })
